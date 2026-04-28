@@ -12,15 +12,16 @@ import {
   postMessage,
   replyToMessage,
   getStorylineFeed,
+  getRecentMessages,
 } from "./yammerClient";
 
-// Create MCP server
 const server = new McpServer({
   name: "mcp-viva-engage",
-  version: "1.0.0",
+  version: "1.1.0",
 });
 
 // ─── NETWORKS ────────────────────────────────────────────
+
 server.registerTool(
   "get_networks",
   {
@@ -36,6 +37,7 @@ server.registerTool(
 );
 
 // ─── COMMUNITIES ─────────────────────────────────────────
+
 server.registerTool(
   "get_communities",
   {
@@ -69,18 +71,25 @@ server.registerTool(
 );
 
 // ─── MESSAGES ────────────────────────────────────────────
+
 server.registerTool(
   "get_community_messages",
   {
     title: "Get Community Messages",
     description:
-      "Get all messages/posts in a specific Viva Engage community in the home network",
+      "Get messages/posts in a specific Viva Engage community. Accepts community name (e.g. 'Developers') or numeric ID. Optionally paginate with page number.",
     inputSchema: {
-      group_id: z.string().describe("The ID of the community/group"),
+      group_id_or_name: z
+        .string()
+        .describe("The ID or name of the community/group"),
+      page: z
+        .number()
+        .optional()
+        .describe("Page number for pagination (default: 1)"),
     },
   },
-  async ({ group_id }) => {
-    const data = await getCommunityMessages(group_id);
+  async ({ group_id_or_name, page }) => {
+    const data = await getCommunityMessages(group_id_or_name, page ?? 1);
     return {
       content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
     };
@@ -109,13 +118,19 @@ server.registerTool(
   {
     title: "Search Messages",
     description:
-      "Search for posts and messages across all communities in the home network",
+      "Search for posts and messages across all communities. Optionally filter by date to find recent posts (e.g. this week, today).",
     inputSchema: {
-      query: z.string().describe("The search term or question to search for"),
+      query: z.string().describe("The search term or topic to search for"),
+      from_date: z
+        .string()
+        .optional()
+        .describe(
+          "Optional start date filter in ISO format (e.g. '2026-04-21' for this week). Only return messages after this date."
+        ),
     },
   },
-  async ({ query }) => {
-    const data = await searchMessages(query);
+  async ({ query, from_date }) => {
+    const data = await searchMessages(query, from_date);
     return {
       content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
     };
@@ -126,14 +141,17 @@ server.registerTool(
   "post_message",
   {
     title: "Post Message",
-    description: "Post a new message to a Viva Engage community",
+    description:
+      "Post a new message to a Viva Engage community. Accepts community name (e.g. 'Developers') or numeric ID.",
     inputSchema: {
-      group_id: z.string().describe("The ID of the community to post to"),
+      group_id_or_name: z
+        .string()
+        .describe("The ID or name of the community to post to"),
       body: z.string().describe("The content of the message to post"),
     },
   },
-  async ({ group_id, body }) => {
-    const data = await postMessage(group_id, body);
+  async ({ group_id_or_name, body }) => {
+    const data = await postMessage(group_id_or_name, body);
     return {
       content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
     };
@@ -160,7 +178,33 @@ server.registerTool(
   }
 );
 
+// ─── RECENT MESSAGES ─────────────────────────────────────
+
+server.registerTool(
+  "get_recent_messages",
+  {
+    title: "Get Recent Messages",
+    description:
+      "Get recent messages across ALL communities. Use this to summarize what's new today or this week. Returns only communities that have new activity.",
+    inputSchema: {
+      hours_ago: z
+        .number()
+        .optional()
+        .describe(
+          "How many hours back to look for messages (default: 24 for today, use 168 for this week)"
+        ),
+    },
+  },
+  async ({ hours_ago }) => {
+    const data = await getRecentMessages(hours_ago ?? 24);
+    return {
+      content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
+    };
+  }
+);
+
 // ─── STORYLINE ───────────────────────────────────────────
+
 server.registerTool(
   "get_storyline_feed",
   {
@@ -176,6 +220,7 @@ server.registerTool(
 );
 
 // ─── START SERVER ────────────────────────────────────────
+
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);

@@ -9,10 +9,12 @@ An open source Model Context Protocol (MCP) server that connects Claude AI to Vi
 ## What You Can Do
 
 Once connected, you can ask Claude things like:
-- *"What Viva Engage communities do I belong to?"*
-- *"Search for posts about Business Central errors"*
+- *"Summarize what's new in all my communities today"*
+- *"What is new in ISV Collaboration this week?"*
+- *"Find all posts about AL Extensions this week"*
 - *"What are the latest conversations in the Developers community?"*
-- *"Reply to that thread with..."*
+- *"Post an announcement to the Business Central community"*
+- *"Search for posts about Business Central errors"*
 - *"Show me my Viva Engage feed"*
 
 ---
@@ -185,12 +187,23 @@ The first time you ask Claude something about Viva Engage:
 | `get_networks` | Get all Viva Engage networks you belong to |
 | `get_communities` | List all communities in your home network |
 | `get_community_by_id` | Get details of a specific community by ID |
-| `get_community_messages` | Get all posts in a specific community |
+| `get_community_messages` | Get posts in a community — accepts **name or ID**, supports pagination |
+| `get_recent_messages` | Get recent messages across **all communities** — great for daily summaries |
 | `get_thread` | Get all messages in a conversation thread |
-| `search_messages` | Search posts across your home network |
-| `post_message` | Post a new message to a community |
+| `search_messages` | Search posts across your home network — supports **date filtering** |
+| `post_message` | Post a new message to a community — accepts **name or ID** |
 | `reply_to_message` | Reply to an existing conversation thread |
 | `get_storyline_feed` | Get your personal Viva Engage storyline feed |
+
+### Example Prompts
+
+| What you ask Claude | What happens behind the scenes |
+|---|---|
+| "Summarize what's new today" | `get_recent_messages` with `hours_ago: 24` |
+| "What's new this week in ISV Collaboration?" | `get_community_messages` with name "ISV Collaboration" |
+| "Find AL Extension posts this week" | `search_messages` with `from_date` set to 7 days ago |
+| "Post to Developers group" | `post_message` with name "Developers" — no ID needed |
+| "Summarize the last 10 posts in Business Central" | `get_community_messages` with name "Business Central" |
 
 ---
 
@@ -242,22 +255,43 @@ mcp-viva-engage/
 **Path issues on Windows**
 > Use either forward slashes `C:/path/to/dist/server.js` or double backslashes `C:\\path\\to\\dist\\server.js` in the config file.
 
+**`get_recent_messages` is slow**
+> This tool scans all your communities one by one. If you have many communities it may take 10-20 seconds. This is normal — the Yammer API does not support bulk message fetching.
+
 ---
 
 ## Known Limitations
 
 - **Home network only** — External networks (e.g. Microsoft BC Partners community) are not accessible via any public Microsoft API. See explanation above.
-- **Rate limiting** — Yammer API allows 10 requests per user per app per 30 seconds.
+- **Rate limiting** — Yammer API allows 10 requests per user per app per 30 seconds. `get_recent_messages` may hit this limit if you have many communities.
 - **Read-only search** — Search results are limited to what Viva Engage indexes.
+- **No draft support** — Messages posted via `post_message` are published immediately. There is no draft or preview mode in the Yammer API.
 
 ---
 
 ## Roadmap
 
+- [ ] `get_my_info` — get current user profile for better context
+- [ ] `like_message` — like/unlike posts
+- [ ] `get_community_members` — list members of a community
 - [ ] Convert to a remote connector so users don't need local setup
-- [ ] Add pagination support for large community feeds
 - [ ] Windows Credential Manager support for even more secure token storage
 - [ ] Support external networks if Microsoft adds API support in future
+
+---
+
+## Changelog
+
+### v1.1.0
+- `get_community_messages` now accepts community **name or ID** (no more looking up IDs)
+- `post_message` now accepts community **name or ID**
+- `search_messages` now supports **date filtering** (`from_date` parameter)
+- New `get_recent_messages` tool — scan all communities for recent activity
+- Message bodies now return **clean plain text** (HTML tags stripped)
+- Pagination support added to `get_community_messages`
+
+### v1.0.0
+- Initial release
 
 ---
 
