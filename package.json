@@ -1,0 +1,33 @@
+{
+  "name": "mcp-viva-engage",
+  "version": "1.0.0",
+  "description": "MCP Server for Viva Engage (Yammer) - Browse communities, search posts and reply",
+  "main": "dist/server.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "ts-node src/server.ts"
+  },
+  "keywords": [
+    "mcp",
+    "viva-engage",
+    "yammer",
+    "microsoft",
+    "claude"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@azure/msal-node": "^2.0.0",
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "@primno/dpapi": "^2.0.1",
+    "axios": "^1.0.0",
+    "dotenv": "^17.4.2",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "ts-node": "^10.0.0",
+    "typescript": "^5.0.0"
+  }
+}
